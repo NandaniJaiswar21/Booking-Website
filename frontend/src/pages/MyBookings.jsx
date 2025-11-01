@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
+import QRCodeDisplay from '../components/QRCodeDisplay'
 
 const MyBookings = () => {
   const { user } = useAuth()
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (user) {
@@ -15,10 +17,12 @@ const MyBookings = () => {
 
   const fetchBookings = async () => {
     try {
+      setError('')
       const response = await axios.get('http://localhost:5000/api/bookings/my-bookings')
       setBookings(response.data)
     } catch (error) {
       console.error('Error fetching bookings:', error)
+      setError('Failed to load bookings. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -30,7 +34,7 @@ const MyBookings = () => {
     try {
       await axios.put(`http://localhost:5000/api/bookings/${bookingId}/cancel`)
       alert('Booking cancelled successfully!')
-      fetchBookings() // Refresh the list
+      fetchBookings()
     } catch (error) {
       console.error('Error cancelling booking:', error)
       alert('Failed to cancel booking. Please try again.')
@@ -60,6 +64,14 @@ const MyBookings = () => {
     )
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg text-red-600">{error}</div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -83,9 +95,9 @@ const MyBookings = () => {
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900">
-                          {booking.room.name}
+                          {booking.room?.name || 'Room details not available'}
                         </h3>
-                        <p className="text-gray-600">{booking.room.type}</p>
+                        <p className="text-gray-600">{booking.room?.type || 'N/A'}</p>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}>
                         {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
@@ -115,24 +127,24 @@ const MyBookings = () => {
                       <span className="block text-sm font-medium text-gray-700 mb-2">
                         Location
                       </span>
-                      <span className="text-gray-900">{booking.room.location}</span>
+                      <span className="text-gray-900">{booking.room?.location || 'Location not available'}</span>
                     </div>
 
-                    {booking.qrCode && (
-                      <div className="mb-4">
-                        <span className="block text-sm font-medium text-gray-700 mb-2">
-                          QR Code for Check-in
-                        </span>
-                        <div className="bg-white p-4 border rounded-lg inline-block">
-                          <div className="text-xs font-mono bg-gray-100 p-2 rounded">
-                            {booking.qrCode}
-                          </div>
-                          <p className="text-xs text-gray-600 mt-2">
-                            Show this code at the reception for check-in
-                          </p>
-                        </div>
+                    {/* QR Code Section */}
+                    <div className="mb-4">
+                      <span className="block text-sm font-medium text-gray-700 mb-2">
+                        QR Code for Check-in
+                      </span>
+                      <div className="bg-white p-4 border rounded-lg inline-block">
+                        <QRCodeDisplay 
+                          qrData={booking.qrCode} 
+                          bookingId={booking._id} 
+                        />
+                        <p className="text-xs text-gray-600 mt-2 text-center">
+                          Show this QR code at reception for check-in
+                        </p>
                       </div>
-                    )}
+                    </div>
                   </div>
 
                   <div className="mt-4 md:mt-0 md:ml-6 flex space-x-3">

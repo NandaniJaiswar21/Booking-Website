@@ -47,7 +47,14 @@ const AddRoom = () => {
     setLoading(true);
 
     try {
-      await axios.post('http://localhost:5000/api/admin/rooms', formData);
+      await axios.post('http://localhost:5000/api/admin/rooms', formData ,
+        {
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+    'Content-Type': 'application/json'
+  }
+}
+      );
       alert('Room added successfully!');
       navigate('/rooms');
     } catch (error) {
